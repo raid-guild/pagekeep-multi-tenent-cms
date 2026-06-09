@@ -214,6 +214,21 @@ svg {
   font-weight: 650;
 }
 
+.status-active {
+  color: var(--accent);
+}
+
+.status-provisioning_failed {
+  color: #b91c1c;
+}
+
+.error-text {
+  color: #b91c1c;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin-top: 0.35rem;
+}
+
 .empty-state {
   padding: 2.5rem 1.25rem;
 }

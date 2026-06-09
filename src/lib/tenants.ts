@@ -24,7 +24,10 @@ export type TenantRecord = {
   railwayProjectId: string | null;
   railwayEnvironmentId: string | null;
   railwayServiceId: string | null;
+  railwayServiceName: string | null;
   serviceUrl: string | null;
+  latestDeploymentId: string | null;
+  provisioningError: string | null;
   childContentTokenRef: string | null;
   codexSessionId: string | null;
   onboardingCompletedAt: string | null;
@@ -58,7 +61,16 @@ function toTenantRecord(row: Record<string, unknown>): TenantRecord {
     railwayServiceId: row.railway_service_id
       ? String(row.railway_service_id)
       : null,
+    railwayServiceName: row.railway_service_name
+      ? String(row.railway_service_name)
+      : null,
     serviceUrl: row.service_url ? String(row.service_url) : null,
+    latestDeploymentId: row.latest_deployment_id
+      ? String(row.latest_deployment_id)
+      : null,
+    provisioningError: row.provisioning_error
+      ? String(row.provisioning_error)
+      : null,
     childContentTokenRef: row.child_content_token_ref
       ? String(row.child_content_token_ref)
       : null,
@@ -101,7 +113,10 @@ export function createTenant(input: CreateTenantInput) {
     railwayProjectId: null,
     railwayEnvironmentId: null,
     railwayServiceId: null,
+    railwayServiceName: null,
     serviceUrl: null,
+    latestDeploymentId: null,
+    provisioningError: null,
     childContentTokenRef: null,
     codexSessionId: null,
     onboardingCompletedAt: null,
@@ -152,6 +167,64 @@ export function setTenantChildTokenRef(tenantId: string, tokenRef: string) {
     targetType: "tenant",
     targetId: tenantId,
     meta: { tokenRef },
+  });
+
+  return getTenant(tenantId);
+}
+
+export function updateTenantProvisioningResult(
+  tenantId: string,
+  input: {
+    status: TenantStatus;
+    railwayProjectId?: string | null;
+    railwayEnvironmentId?: string | null;
+    railwayServiceId?: string | null;
+    railwayServiceName?: string | null;
+    serviceUrl?: string | null;
+    latestDeploymentId?: string | null;
+    provisioningError?: string | null;
+  },
+) {
+  const updatedAt = new Date().toISOString();
+
+  getDb()
+    .prepare(
+      `UPDATE tenants
+       SET status = @status,
+           railway_project_id = COALESCE(@railwayProjectId, railway_project_id),
+           railway_environment_id = COALESCE(@railwayEnvironmentId, railway_environment_id),
+           railway_service_id = COALESCE(@railwayServiceId, railway_service_id),
+           railway_service_name = COALESCE(@railwayServiceName, railway_service_name),
+           service_url = COALESCE(@serviceUrl, service_url),
+           latest_deployment_id = COALESCE(@latestDeploymentId, latest_deployment_id),
+           provisioning_error = @provisioningError,
+           updated_at = @updatedAt
+       WHERE id = @tenantId`,
+    )
+    .run({
+      tenantId,
+      status: input.status,
+      railwayProjectId: input.railwayProjectId ?? null,
+      railwayEnvironmentId: input.railwayEnvironmentId ?? null,
+      railwayServiceId: input.railwayServiceId ?? null,
+      railwayServiceName: input.railwayServiceName ?? null,
+      serviceUrl: input.serviceUrl ?? null,
+      latestDeploymentId: input.latestDeploymentId ?? null,
+      provisioningError: input.provisioningError ?? null,
+      updatedAt,
+    });
+
+  createAuditEvent({
+    actionType: "tenant.provisioning_result.update",
+    targetType: "tenant",
+    targetId: tenantId,
+    meta: {
+      status: input.status,
+      railwayServiceId: input.railwayServiceId ?? null,
+      serviceUrl: input.serviceUrl ?? null,
+      latestDeploymentId: input.latestDeploymentId ?? null,
+      provisioningError: input.provisioningError ?? null,
+    },
   });
 
   return getTenant(tenantId);

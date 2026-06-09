@@ -75,3 +75,11 @@ POST /agent/hooks/tenant-provision-requested/trigger
 ```
 
 PageKeep sends this request with `x-service-token`. The hook should invoke the `tenant-child-provisioner` skill through codex-runtime, where the Railway project token already lives.
+
+Provisioning results should call back to:
+
+```text
+POST /api/tenants/:tenantId/provision/callback
+```
+
+using `x-service-token`. The callback marks the tenant `active` or `provisioning_failed` and stores the child service URL.

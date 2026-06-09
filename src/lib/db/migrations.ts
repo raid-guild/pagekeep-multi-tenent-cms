@@ -65,4 +65,25 @@ export const migrations: Migration[] = [
       `);
     },
   },
+  {
+    id: "002_tenant_provisioning_result",
+    up(db) {
+      const columns = db
+        .prepare("PRAGMA table_info(tenants)")
+        .all() as Array<{ name: string }>;
+      const existing = new Set(columns.map((column) => column.name));
+
+      if (!existing.has("railway_service_name")) {
+        db.exec("ALTER TABLE tenants ADD COLUMN railway_service_name TEXT;");
+      }
+
+      if (!existing.has("latest_deployment_id")) {
+        db.exec("ALTER TABLE tenants ADD COLUMN latest_deployment_id TEXT;");
+      }
+
+      if (!existing.has("provisioning_error")) {
+        db.exec("ALTER TABLE tenants ADD COLUMN provisioning_error TEXT;");
+      }
+    },
+  },
 ];

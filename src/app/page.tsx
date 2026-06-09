@@ -100,19 +100,33 @@ export default function Home() {
                   <div>
                     <p className="tenant-name">{tenant.siteName}</p>
                     <p className="muted">{tenant.orgName}</p>
+                    {tenant.provisioningError ? (
+                      <p className="error-text">{tenant.provisioningError}</p>
+                    ) : null}
                   </div>
                   <p className="muted">{tenant.templateKey}</p>
-                  <p className="status-text">
+                  <p className={`status-text status-${tenant.status}`}>
                     {tenant.status}
                   </p>
-                  <form
-                    action={`/api/tenants/${tenant.id}/provision`}
-                    method="post"
-                  >
-                    <button className="secondary-button" type="submit">
-                      Provision child
-                    </button>
-                  </form>
+                  {tenant.serviceUrl ? (
+                    <a
+                      className="secondary-button"
+                      href={tenant.serviceUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      Open child
+                    </a>
+                  ) : (
+                    <form
+                      action={`/api/tenants/${tenant.id}/provision`}
+                      method="post"
+                    >
+                      <button className="secondary-button" type="submit">
+                        Provision child
+                      </button>
+                    </form>
+                  )}
                 </div>
               ))}
             </div>
