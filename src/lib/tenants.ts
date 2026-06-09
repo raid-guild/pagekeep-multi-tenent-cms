@@ -172,6 +172,29 @@ export function setTenantChildTokenRef(tenantId: string, tokenRef: string) {
   return getTenant(tenantId);
 }
 
+export function markTenantProvisioningQueued(tenantId: string) {
+  const updatedAt = new Date().toISOString();
+
+  getDb()
+    .prepare(
+      `UPDATE tenants
+       SET status = 'provisioning',
+           provisioning_error = NULL,
+           updated_at = ?
+       WHERE id = ?`,
+    )
+    .run(updatedAt, tenantId);
+
+  createAuditEvent({
+    actionType: "tenant.provisioning.queued",
+    targetType: "tenant",
+    targetId: tenantId,
+    meta: { status: "provisioning" },
+  });
+
+  return getTenant(tenantId);
+}
+
 export function updateTenantProvisioningResult(
   tenantId: string,
   input: {

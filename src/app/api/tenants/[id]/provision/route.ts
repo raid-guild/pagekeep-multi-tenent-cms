@@ -4,7 +4,11 @@ import { randomUUID } from "node:crypto";
 import { config } from "@/lib/config";
 import { triggerPrismProvisionHook } from "@/lib/prism-hooks";
 import { generateSecretToken, storeSecret } from "@/lib/secrets";
-import { getTenant, setTenantChildTokenRef } from "@/lib/tenants";
+import {
+  getTenant,
+  markTenantProvisioningQueued,
+  setTenantChildTokenRef,
+} from "@/lib/tenants";
 
 type RouteContext = {
   params: Promise<{
@@ -25,6 +29,8 @@ export async function POST(_request: Request, context: RouteContext) {
 
   const childContentToken = generateSecretToken();
   const childContentTokenRef = randomUUID();
+
+  markTenantProvisioningQueued(tenant.id);
 
   const hook = await triggerPrismProvisionHook({
     event: "tenant.provision.requested",
