@@ -68,9 +68,9 @@ Reuse an existing Railway service with this exact name. Never create duplicates.
 
 - Use the target project and environment from the hook payload.
 - Use the Railway project token already available to codex-runtime.
-- Service creation requires a Railway token with permission to add services to the target project.
-- Prefer `RAILWAY_API_TOKEN` when it is configured. Fall back to `RAILWAY_PROJECT_TOKEN` only if it can run `railway add`.
-- Do not unset `RAILWAY_API_TOKEN` when creating services.
+- Create services through Railway GraphQL with the project token. Send it as `Project-Access-Token`.
+- Do not use `railway add` for service creation in codex-runtime; that CLI path can fail even when the project token can create services through GraphQL.
+- Do not use `railway up` as the service creation step. It only deploys to an existing service.
 - Always pass explicit `--service`, `--environment`, and `--project` or linked project context.
 - Never modify Prism services: `site`, `codex-runtime`, `prism-memory`, `discord-adapter`, `task-runner`, or `Queen-Raida`.
 - Ensure the child service has a `/data` volume.
@@ -124,13 +124,36 @@ Check whether the computed service name already exists:
 railway service list --json
 ```
 
-If the service does not exist, create it with the Railway CLI:
+If the service does not exist, create it with Railway GraphQL using the project token:
 
-```bash
-railway add --service "$SERVICE_NAME" --json
+```graphql
+mutation serviceCreate($input: ServiceCreateInput!) {
+  serviceCreate(input: $input)
+}
 ```
 
-Do not use `railway up` as the service creation step. `railway up --service "$SERVICE_NAME"` only deploys to an existing service; if the service does not exist it returns `Service not found`.
+Variables:
+
+```json
+{
+  "input": {
+    "projectId": "<railwayProjectId>",
+    "name": "tenant-site-<slug>"
+  }
+}
+```
+
+Use this header:
+
+```text
+Project-Access-Token: <RAILWAY_PROJECT_TOKEN>
+```
+
+After service creation, re-list services and resolve the created `serviceId` by exact service name.
+
+Do not call `serviceConnect`. Do not attach a GitHub source. The deploy step below uploads the child template directly.
+
+Do not use `railway up --service "$SERVICE_NAME"` until this GraphQL step has returned a service and the service is visible in `railway service list --json`.
 
 If service creation fails with `Not Authorized`, `Forbidden`, `Unauthorized`, or an equivalent permission error:
 
@@ -142,7 +165,7 @@ If service creation fails with `Not Authorized`, `Forbidden`, `Unauthorized`, or
 {
   "status": "provisioning_failed",
   "failedStep": "service-create",
-  "error": "Railway token is not authorized to create services in the target project. Configure codex-runtime with a Railway token that can run railway add --service."
+  "error": "Railway project token was not authorized to create a service through Railway GraphQL serviceCreate."
 }
 ```
 
