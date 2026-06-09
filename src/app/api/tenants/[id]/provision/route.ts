@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "node:crypto";
 
 import { config } from "@/lib/config";
 import { triggerPrismProvisionHook } from "@/lib/prism-hooks";
@@ -23,13 +24,7 @@ export async function POST(_request: Request, context: RouteContext) {
   }
 
   const childContentToken = generateSecretToken();
-  const secret = storeSecret({
-    scopeType: "tenant",
-    scopeId: tenant.id,
-    secretKind: "child_content_token",
-    secretValue: childContentToken,
-  });
-  setTenantChildTokenRef(tenant.id, secret.id);
+  const childContentTokenRef = randomUUID();
 
   const hook = await triggerPrismProvisionHook({
     event: "tenant.provision.requested",
@@ -38,13 +33,22 @@ export async function POST(_request: Request, context: RouteContext) {
     siteName: tenant.siteName,
     templateKey: tenant.templateKey,
     parentBaseUrl: config.appBaseUrl,
-    childContentTokenRef: secret.id,
+    childContentTokenRef,
     childContentToken,
     railwayProjectId: config.railwayProjectId,
     railwayEnvironmentId: config.railwayEnvironmentId,
   });
 
   if (hook.ok) {
+    const secret = storeSecret({
+      id: childContentTokenRef,
+      scopeType: "tenant",
+      scopeId: tenant.id,
+      secretKind: "child_content_token",
+      secretValue: childContentToken,
+    });
+    setTenantChildTokenRef(tenant.id, secret.id);
+
     return NextResponse.json(
       {
         ok: true,

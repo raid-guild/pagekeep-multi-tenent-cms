@@ -7,12 +7,13 @@ export function generateSecretToken(bytes = 32) {
 }
 
 export function storeSecret(input: {
+  id?: string;
   scopeType: string;
   scopeId: string;
   secretKind: string;
   secretValue: string;
 }) {
-  const id = randomUUID();
+  const id = input.id || randomUUID();
   const createdAt = new Date().toISOString();
 
   getDb()
