@@ -1,0 +1,32 @@
+{
+  "name": "pagekeep-multi-tenant-cms",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev --hostname 0.0.0.0 --port ${SITE_PORT:-3100}",
+    "migrate": "tsx src/cli/migrate.ts",
+    "start": "npm run migrate && next start --hostname 0.0.0.0 --port ${PORT:-3100}",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.8.0",
+    "next": "^15.5.18",
+    "postcss": "^8.5.15",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "postcss": "^8.5.15"
+  }
+}
