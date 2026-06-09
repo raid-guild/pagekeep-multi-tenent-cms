@@ -68,7 +68,9 @@ Reuse an existing Railway service with this exact name. Never create duplicates.
 
 - Use the target project and environment from the hook payload.
 - Use the Railway project token already available to codex-runtime.
-- Unset `RAILWAY_API_TOKEN` for Railway CLI calls that should use project-token auth.
+- Service creation requires a Railway token with permission to add services to the target project.
+- Prefer `RAILWAY_API_TOKEN` when it is configured. Fall back to `RAILWAY_PROJECT_TOKEN` only if it can run `railway add`.
+- Do not unset `RAILWAY_API_TOKEN` when creating services.
 - Always pass explicit `--service`, `--environment`, and `--project` or linked project context.
 - Never modify Prism services: `site`, `codex-runtime`, `prism-memory`, `discord-adapter`, `task-runner`, or `Queen-Raida`.
 - Ensure the child service has a `/data` volume.
@@ -111,6 +113,36 @@ If clone fails because the repo is private or unavailable, stop and callback fai
   "status": "provisioning_failed",
   "failedStep": "template-fetch",
   "error": "Could not fetch raid-guild/pagekeep-multi-tenent-cms templates/child-site from codex-runtime."
+}
+```
+
+## Create Or Reuse Service
+
+Check whether the computed service name already exists:
+
+```bash
+railway service list --json
+```
+
+If the service does not exist, create it with the Railway CLI:
+
+```bash
+railway add --service "$SERVICE_NAME" --json
+```
+
+Do not use `railway up` as the service creation step. `railway up --service "$SERVICE_NAME"` only deploys to an existing service; if the service does not exist it returns `Service not found`.
+
+If service creation fails with `Not Authorized`, `Forbidden`, `Unauthorized`, or an equivalent permission error:
+
+- Do not attempt deployment.
+- Do not generate a fallback app.
+- Callback PageKeep with:
+
+```json
+{
+  "status": "provisioning_failed",
+  "failedStep": "service-create",
+  "error": "Railway token is not authorized to create services in the target project. Configure codex-runtime with a Railway token that can run railway add --service."
 }
 ```
 
