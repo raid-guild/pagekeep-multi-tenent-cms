@@ -6,6 +6,8 @@ export type AppConfig = {
   databaseUrl: string;
   railwayProjectId: string | null;
   railwayEnvironmentId: string | null;
+  prismHookBaseUrl: string | null;
+  prismHookKey: string;
 };
 
 function parseSqliteFileUrl(value: string) {
@@ -39,4 +41,7 @@ export const config: AppConfig = {
   databaseUrl: database.databaseUrl,
   railwayProjectId: process.env.RAILWAY_PROJECT_ID?.trim() || null,
   railwayEnvironmentId: process.env.RAILWAY_ENVIRONMENT_ID?.trim() || null,
+  prismHookBaseUrl:
+    process.env.PRISM_HOOK_BASE_URL?.trim().replace(/\/+$/, "") || null,
+  prismHookKey: process.env.PRISM_HOOK_KEY?.trim() || "tenant-provision-requested",
 };

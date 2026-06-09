@@ -87,8 +87,9 @@ export default function Home() {
             <div>
               <h2>Page Keeps</h2>
               <p className="panel-subtitle">
-                Create tenant records now. Provisioning is queued through
-                codex-runtime once this parent service has its runtime URL.
+                Create tenant records now. Provisioning is submitted through the
+                Prism hook once the hook is enabled and service-token auth is
+                configured.
               </p>
             </div>
           </div>
@@ -171,9 +172,9 @@ export default function Home() {
           <div className="next-panel">
             <h3>Next backend hook</h3>
               <p>
-              The provision button submits a constrained job to codex-runtime.
-              Codex-runtime already owns the Railway project token, so the
-              parent service does not need broad Railway credentials.
+              The provision button calls the Prism hook, which starts the
+              tenant-child-provisioner workflow. Codex-runtime keeps the Railway
+              project token; PageKeep only sends tenant metadata.
             </p>
           </div>
         </aside>

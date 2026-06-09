@@ -135,3 +135,24 @@ export function createTenant(input: CreateTenantInput) {
 
   return tenant;
 }
+
+export function setTenantChildTokenRef(tenantId: string, tokenRef: string) {
+  const updatedAt = new Date().toISOString();
+  getDb()
+    .prepare(
+      `UPDATE tenants
+       SET child_content_token_ref = ?,
+           updated_at = ?
+       WHERE id = ?`,
+    )
+    .run(tokenRef, updatedAt, tenantId);
+
+  createAuditEvent({
+    actionType: "tenant.child_token_ref.set",
+    targetType: "tenant",
+    targetId: tenantId,
+    meta: { tokenRef },
+  });
+
+  return getTenant(tenantId);
+}

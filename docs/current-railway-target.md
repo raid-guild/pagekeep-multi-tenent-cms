@@ -95,17 +95,13 @@ CONTROL_PLANE_DATABASE_URL=file:/data/control-plane.db
 NEXT_PUBLIC_APP_BASE_URL=https://tenant-control-plane-production.up.railway.app
 RAILWAY_PROJECT_ID=91ce093b-1fed-44da-8dc2-ae88e0031d10
 RAILWAY_ENVIRONMENT_ID=dbcd38e4-6d53-4129-88af-e431d2fd68f3
+PRISM_HOOK_BASE_URL=<Prism site base URL>
+PRISM_HOOK_KEY=tenant-provision-requested
+PRISM_HOOK_SERVICE_TOKEN=<same internal service token expected by Prism site>
 ```
 
 Attach a persistent volume at `/data` before relying on SQLite parent state.
 
-Future Prism integration variables:
-
-```text
-CODEX_RUNTIME_BASE_URL=<existing Prism codex-runtime private URL>
-INTERNAL_SERVICE_TOKEN=<shared internal token>
-```
-
-Railway provisioning credentials can remain on `codex-runtime`. The parent control plane should submit a constrained provisioning job to `codex-runtime` instead of holding the Railway project token itself.
+Railway provisioning credentials can remain on `codex-runtime`. PageKeep should call the Prism hook `tenant-provision-requested`; the hook creates a workflow-backed request that invokes the `tenant-child-provisioner` skill through codex-runtime.
 
 Do not inject Railway credentials into tenant child services.

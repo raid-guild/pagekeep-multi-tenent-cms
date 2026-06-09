@@ -67,3 +67,11 @@ NEXT_PUBLIC_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 Attach a Railway volume at `/data` if using SQLite for parent state.
 
 Future Railway provisioning credentials should be set only on the parent service. Child services should not receive Railway API credentials.
+
+Provisioning is expected to flow through the Prism hook:
+
+```text
+POST /agent/hooks/tenant-provision-requested/trigger
+```
+
+PageKeep sends this request with `x-service-token`. The hook should invoke the `tenant-child-provisioner` skill through codex-runtime, where the Railway project token already lives.

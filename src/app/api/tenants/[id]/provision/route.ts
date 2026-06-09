@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { createCodexRuntimeJob } from "@/lib/codex-runtime";
-import { getTenant } from "@/lib/tenants";
+import { config } from "@/lib/config";
+import { triggerPrismProvisionHook } from "@/lib/prism-hooks";
+import { generateSecretToken, storeSecret } from "@/lib/secrets";
+import { getTenant, setTenantChildTokenRef } from "@/lib/tenants";
 
 type RouteContext = {
   params: Promise<{
@@ -20,61 +22,57 @@ export async function POST(_request: Request, context: RouteContext) {
     );
   }
 
-  const prompt = [
-    "Provision a Railway child tenant site for the tenant metadata below.",
-    "",
-    "Use the existing Railway project token available inside codex-runtime.",
-    "Do not modify or redeploy existing Prism services.",
-    "Create or use a PageKeep child service from the child-site template.",
-    "Attach a /data volume, set required child env vars, create a Railway domain, deploy, then call /health.",
-    "After deployment, report the Railway service ID, public URL, and health result.",
-    "",
-    JSON.stringify(
-      {
-        tenantId: tenant.id,
-        orgName: tenant.orgName,
-        siteName: tenant.siteName,
-        templateKey: tenant.templateKey,
-      },
-      null,
-      2,
-    ),
-  ].join("\n");
+  const childContentToken = generateSecretToken();
+  const secret = storeSecret({
+    scopeType: "tenant",
+    scopeId: tenant.id,
+    secretKind: "child_content_token",
+    secretValue: childContentToken,
+  });
+  setTenantChildTokenRef(tenant.id, secret.id);
 
-  const job = await createCodexRuntimeJob({
-    sessionId: `tenant-provision:${tenant.id}`,
-    prompt,
-    metadata: {
-      workflow: "tenant-child-service-provision",
-      tenant,
-      childTemplatePath: "templates/child-site",
-    },
+  const hook = await triggerPrismProvisionHook({
+    event: "tenant.provision.requested",
+    tenantId: tenant.id,
+    orgName: tenant.orgName,
+    siteName: tenant.siteName,
+    templateKey: tenant.templateKey,
+    parentBaseUrl: config.appBaseUrl,
+    childContentTokenRef: secret.id,
+    childContentToken,
+    railwayProjectId: config.railwayProjectId,
+    railwayEnvironmentId: config.railwayEnvironmentId,
   });
 
-  if (job.ok) {
+  if (hook.ok) {
     return NextResponse.json(
       {
         ok: true,
         status: "queued",
         tenantId: tenant.id,
-        codexRuntimeJobId: job.jobId,
+        hookRunId: hook.hookRunId,
+        requestId: hook.requestId,
+        requestNumber: hook.requestNumber,
+        autoStartQueued: hook.autoStartQueued,
         message:
-          "Provisioning job queued in codex-runtime. Poll codex-runtime for job status.",
+          "Provisioning request submitted to the Prism hook.",
       },
-      { status: 202 },
+      { status: hook.status === 202 ? 202 : 200 },
     );
   }
 
   return NextResponse.json(
     {
       ok: false,
-      status: "codex_runtime_not_configured",
+      status: "prism_hook_failed",
       tenantId: tenant.id,
-      message: job.error,
+      message: hook.error,
+      hookStatus: hook.status,
       plannedSteps: [
-        "configure CODEX_RUNTIME_BASE_URL on PageKeep",
-        "submit constrained provisioning job to codex-runtime",
-        "codex-runtime uses its Railway project token",
+        "enable tenant-provision-requested hook in Prism",
+        "configure PRISM_HOOK_BASE_URL and PRISM_HOOK_SERVICE_TOKEN on PageKeep",
+        "Prism hook creates a workflow-backed request",
+        "workflow invokes tenant-child-provisioner through codex-runtime",
         "attach /data volume",
         "set child env vars",
         "deploy templates/child-site",

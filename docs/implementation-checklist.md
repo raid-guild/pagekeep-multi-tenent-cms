@@ -84,8 +84,9 @@ This checklist turns the tenant site control plane spec into buildable slices. K
 ## Phase 4: Railway Provisioning
 
 - [x] Decide Railway credential type for parent provisioning.
-- [ ] Configure parent `CODEX_RUNTIME_BASE_URL`.
-- [x] Scaffold codex-runtime provisioning job endpoint.
+- [ ] Configure parent `PRISM_HOOK_BASE_URL`.
+- [ ] Configure parent `PRISM_HOOK_SERVICE_TOKEN`.
+- [x] Scaffold Prism hook trigger endpoint.
 - [ ] Implement deterministic provisioning runner in codex-runtime or a hosted skill.
 - [ ] Create child content token generator.
 - [ ] Create tenant provisioning workflow:
