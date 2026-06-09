@@ -46,6 +46,39 @@ GET / -> 200
 POST /api/tenants -> created provisioning tenant
 ```
 
+## First Child Service Smoke
+
+The first hook-backed provisioning run created the child Railway service but failed while connecting the GitHub source because the skill used the old repo name:
+
+```text
+failedStep: service-connect
+error: Railway rejected the required multi-tenent-cms-app source repo with Not Authorized.
+```
+
+The partial service was reused and manually recovered with a direct Railway upload from `templates/child-site`.
+
+```text
+Service name: tenant-site-6e675431-64fd-4632-bd
+Service ID: 8f475b14-fde9-4004-9dca-1319aece5340
+Public URL: https://tenant-site-6e675431-64fd-4632-bd-production.up.railway.app
+Latest verified deployment ID: bbde11ff-0871-45f1-b1f5-582b5fc9ee88
+Volume: tenant-site-6e675431-64fd-4632-bd-volume mounted at /data
+```
+
+Child smoke checks passed:
+
+```text
+GET /health -> ok: true
+GET / -> 200
+```
+
+Provisioning skill correction needed:
+
+- use repo `raid-guild/pagekeep-multi-tenent-cms`
+- deploy the child from `templates/child-site`
+- or prefer direct Railway upload from a hydrated checkout with `railway up templates/child-site --path-as-root`
+- reuse existing `tenant-site-<tenant>` services before creating a new service
+
 ## Local CLI State
 
 As of the first scaffold pass, this local repo is not linked to Railway:
